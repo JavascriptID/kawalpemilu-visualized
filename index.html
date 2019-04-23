@@ -16,7 +16,7 @@
     <title>KawalPemilu Visualized</title>
     <!-- <meta name="viewport" content="width=device-width, initial-scale=1"> -->
     <meta name="author" content="Haries Ramdhani">
-    <meta name="description" content="A data visualization of the result of Indonesia's recent election built with D3.js and KawalPemilu API">
+    <meta name="description" content="A data visualization of the result of Indonesia's recent election built using D3.js and KawalPemilu API">
     <link rel="shortcut icon" type="image/png" href="src/assets/img/favicon.png" />
 
     <meta property="og:image" content="https://raw.githubusercontent.com/hariesramdhani/kawalpemilu-visualized/master/src/assets/img/twitter_card.png">
@@ -25,7 +25,7 @@
 
     <!--Twitter-->
     <meta name="twitter:title" content="KawalPemilu Visualized">
-    <meta name="twitter:description" content="A data visualization of the result of Indonesia's recent election built with D3.js and KawalPemilu API">
+    <meta name="twitter:description" content="A data visualization of the result of Indonesia's recent election built using D3.js and KawalPemilu API">
     <meta name="twitter:image" content="https://raw.githubusercontent.com/hariesramdhani/kawalpemilu-visualized/master/src/assets/img/twitter_card.png">
     <meta name="twitter:card" content="summary_large_image">
 
@@ -53,7 +53,7 @@
         <div class="ballot-container">
             <img src="src/assets/img/ballot_box.png" style="width: 200px; padding: 0 40px 20px 40px;">
             <div class="ballot-description">
-                <h1 style="font-size: 75px;" id="total-votes">Loading...</h1>
+                <h1 style="font-size: 75px;" id="total-votes">Memuat...</h1>
                 <p style="font-size: 25px; font-weight: bold;">SUARA</p>
                 <p style="font-size: 15px;">Dari <span style="font-weight: bold;" id="received-TPS">0</span> TPS dengan <span id="unprocessed-TPS" style="font-weight: bold;">0</span> belum diproses dan <span id="error-TPS" style="font-weight: bold;">0</span> <a style="font-weight: 100; color: #D34E24" href="https://kawalpemilu.org/">bermasalah</a></p>
                 <p>Update terakhir pada <span id="last-update"></span></p>
@@ -87,6 +87,7 @@
                 <h3>JOKOWI-MA'RUF</h3>
                 <h1 id="jokomaruf-vote">0</h1>
                 <h3 id="jokomaruf-vote-percentage">0%</h3>
+                <p>Menang di <span id="jokomaruf-wins">0</span> Provinsi</p>
             </div>
         </div>
         <div class="vote-container">
@@ -94,6 +95,7 @@
                 <h3>PRABOWO-SANDI</h3>
                 <h1 id="prabowosandi-vote">0</h1>
                 <h3 id="prabowosandi-vote-percentage">0%</h3>
+                <p>Menang di <span id="prabowosandi-wins">0</span> Provinsi</p>
             </div>
             <img src="src/assets/img/prabowo_sandi.png" style="width: 200px;">
         </div>
@@ -102,7 +104,18 @@
     <div class="container" id="legislative">
     </div>
     
-    <div id="map" style="text-align: center; margin-bottom: 40px;">
+    <div id="map" style="text-align: center;">
+    </div>
+
+
+    <div class="container" id="color-by" style="margin-bottom: 40px;">
+        <h3 style="margin-bottom: 10px;">UBAH WARNA PETA MENURUT</h3>
+        <div style="display: flex; justify-content: center; align-items: center;">
+            <div class="color-by-button" id="jumlah-TPS" style="background-color: #929795">Jumlah TPS</div>
+            <div class="color-by-button" id="jumlah-TPS-diterima" style="background-color: #9097C0">Jumlah TPS Diterima</div>
+            <div class="color-by-button" id="jumlah-suara-sah" style="background-color: #7AC890">Jumlah Suara Sah</div>
+            <div class="color-by-button" id="jumlah-suara-tidak-sah" style="background-color: #F6735A">Jumlah Suara Tidak Sah</div>
+        </div>
     </div>
     
     <div class="container">
@@ -112,6 +125,7 @@
     <div id="window-panel">
     </div>
 
+    <!--IT'S SUPPOSED TO BE THE ERROR MESSAGE-->
     <!-- <div id="error-message" style="font-size: 30px; position: fixed; top: 25%; left: 25%; width: 50%; height: 50%; color: white; font-weight: bold; background-color: rgba(0, 0, 0, 0.6); display: flex; border-radius: 10px; align-items: center; justify-content: center;">
         <p style="padding: 20px;">Maaf API KawalPemilu sedang down/sedang ada perubahan, harap coba lagi nanti. Laporkan bug/error di <a href="https://github.com/hariesramdhani/kawalpemilu-visualized">sini</a> atau mention @harieesss</p>
     </div> -->

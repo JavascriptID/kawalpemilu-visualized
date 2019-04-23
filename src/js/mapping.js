@@ -1,4 +1,4 @@
-export const mapping = function(id, filename) {
+export const mapping = (id, filename) => {
   let w = 1200,
       h = 400;
 
@@ -9,10 +9,7 @@ export const mapping = function(id, filename) {
     right: 40
   };
 
-  let width = w - margin.left - margin.right;
-  let height = h - margin.top - margin.bottom;
-
-  let tooltip = d3.select("#map")
+  let tooltip = d3.select(`#${id}`)
                   .append("div")
                   .style("position", "fixed")
                   .style("z-index", 1)
@@ -26,8 +23,9 @@ export const mapping = function(id, filename) {
   //Define default path generator
   let path = d3.geoPath()
               .projection(projection);
-              
-  let svg = d3.select("#map")
+
+  // Create the SVG for the map            
+  let svg = d3.select(`#${id}`)
               .append("svg")
               .attr("id", "chart")
               .attr("width", w)
@@ -35,14 +33,19 @@ export const mapping = function(id, filename) {
               .append("g")
               .attr("tranform", "translate(0" + margin.left + "," + margin.top + ")");
 
+
+  // Make the number easier to read
   let commaSeparate = (num) => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   }
 
   let date = Date.now();
   let APIurl = "https://kawal-c1.appspot.com/api/c/0?" + date;
+
   let lengthOfData;
   let jsonFeatures;
+
+  // Store all of the total here
   let candidateOneTotal = 0; 
   let candidateTwoTotal = 0;
   let validTotal = 0;
@@ -52,26 +55,52 @@ export const mapping = function(id, filename) {
   let unprocessedTPSTotal = 0;
   let errorTPSTotal = 0;
 
-  let legislativeTotal = {
-    "PKB": 0,
-    "GER": 0,
-    "PDI": 0,
-    "GOL": 0,
-    "NAS": 0,
-    "GAR": 0,
-    "BER": 0,
-    "PKS": 0,
-    "PER": 0,
-    "PPP": 0,
-    "PSI": 0,
-    "PAN": 0,
-    "HAN": 0,
-    "DEM": 0,
-    "PBB": 0,
-    "PKP": 0,
-  }
+  // Store MIN MAX DATA
+  let minTPS = 0;
+  let maxTPS = 0;
+
+  // Winning in ..... provinces
+  let jokomarufWins = 0;
+  let prabowosandiWins = 0;
+
+  // Store objects for looping through the different buttons
+  let colorByButtons = [
+    {
+      "domainMin": 100,
+      "domainMax": 0,
+      "rangeMin": "#DBDDEA",
+      "rangeMax": "#57596C",
+      "id": "jumlah-TPS-diterima",
+      "numerator": "receivedTPS",
+      "denominator": "provinceTPSNo"
+    }, {
+      "domainMin": 100,
+      "domainMax": 0,
+      "rangeMin": "#BED0C3",
+      "rangeMax": "#477554",
+      "id": "jumlah-suara-sah",
+      "numerator": "valid",
+      "denominator": "totalVotes"
+    }, {
+      "domainMin": 1,
+      "domainMax": 0,
+      "rangeMin": "#FBCBC3",
+      "rangeMax": "#9D493A",
+      "id": "jumlah-suara-tidak-sah",
+      "numerator": "invalid",
+      "denominator": "totalVotes"
+    }
+  ]
 
   let parties = ["PKB", "GER", "PDI", "GOL", "NAS", "GAR", "BER", "PKS", "PER", "PPP", "PSI", "PAN", "HAN", "DEM", "PBB", "PKP"];
+  let legislativeTotal = {
+
+  }
+
+  // Initialize the object to store legislative vote counts
+  parties.forEach(party => {
+    legislativeTotal[party] = 0;
+  })
 
   let options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
 
@@ -93,16 +122,11 @@ export const mapping = function(id, filename) {
       return time;
     })
 
-  d3.json(APIurl, function(error, data) {
+  d3.json(APIurl, (error, data) => {
     
     lengthOfData = data["children"].length;
 
-    if (lengthOfData == undefined) {
-      d3.select("#error-message")
-        .attr("display", "flex");
-    }
-
-    d3.json("src/assets/json/indonesia.json", function(error, id) {
+    d3.json("src/assets/json/indonesia.json", (error, id) => {
 
       if (error) {
         return console.log(error);
@@ -117,11 +141,28 @@ export const mapping = function(id, filename) {
         let provinceTPSNo = data["children"][i][2];
         TPSTotal += provinceTPSNo;
 
+        if (provinceTPSNo > maxTPS) {
+          maxTPS = provinceTPSNo;
+        } else if (provinceTPSNo < minTPS) {
+          minTPS = provinceTPSNo;
+        }
+
         // ELECTION RESULT DATA STARTS HERE
 
         // Received TPS data including the number of unprocessed ones
         let receivedTPS = data["data"][provinceID]["sum"]["cakupan"];
         receivedTPSTotal += receivedTPS;
+
+
+
+        // Find max min for scaling
+        let receivedTPSPercentage = receivedTPS/provinceTPSNo * 100;
+
+        if (receivedTPSPercentage > colorByButtons[0]["domainMax"]) {
+          colorByButtons[0]["domainMax"] = receivedTPSPercentage;
+        } else if (receivedTPSPercentage < colorByButtons[0]["domainMin"]) {
+          colorByButtons[0]["domainMin"] = receivedTPSPercentage;
+        }
 
         // Unprocessed TPS
         let unprocessedTPS = data["data"][provinceID]["sum"]["pending"];
@@ -147,29 +188,47 @@ export const mapping = function(id, filename) {
         let invalid = data["data"][provinceID]["sum"]["tSah"];
         invalidTotal += invalid;
 
+        let totalVotes = valid + invalid;
+
+        let validPercentage = valid/totalVotes * 100;
+
+
+        // Find Max Min for scaling
+        if (validPercentage > colorByButtons[1]["domainMax"]) {
+          colorByButtons[1]["domainMax"] = validPercentage;
+        } else if (validPercentage < colorByButtons[1]["domainMin"]) {
+          colorByButtons[1]["domainMin"] = validPercentage;
+        }
+
+        let invalidPercentage = invalid/totalVotes * 100;
+
+        if (invalidPercentage > colorByButtons[2]["domainMax"]) {
+          colorByButtons[2]["domainMax"] = invalidPercentage;
+        } else if (invalidPercentage < colorByButtons[2]["domainMin"]) {
+          colorByButtons[2]["domainMin"] = invalidPercentage;
+        }
+
+        // Handle KALTARA problem for now
+        if (provinceName == "KALIMANTAN UTARA") {
+          if (candidateOne > candidateTwo) {
+            jokomarufWins += 1;
+          } else {
+            prabowosandiWins += 1;
+          }
+        }
+
         // LEGISLATIVE DATA STARTS HERE
 
         let legislative = {
-          "PKB": 0,
-          "GER": 0,
-          "PDI": 0,
-          "GOL": 0,
-          "NAS": 0,
-          "GAR": 0,
-          "BER": 0,
-          "PKS": 0,
-          "PER": 0,
-          "PPP": 0,
-          "PSI": 0,
-          "PAN": 0,
-          "HAN": 0,
-          "DEM": 0,
-          "PBB": 0,
-          "PKP": 0,
-        }
 
-        parties.forEach(function(party) {
+        }
+        // parties.forEach(party => {
+        //   legislative[party] = 0;
+        // })
+
+        parties.forEach(party => {
           
+          // PKS key on the API is 'sej' that's why
           if (party == "PKS") {
             legislative[party] = data["data"][provinceID]["sum"]["sej"];  
           } else {
@@ -183,18 +242,20 @@ export const mapping = function(id, filename) {
 
         let legMax = Object.keys(legislative).reduce((a, b) => legislative[a] > legislative[b] ? a : b);
         
-
+        // Without this the map color will look like the color of the last party on the list
         if (legislative[legMax] == undefined) {
           legMax = "NONE";
         }
 
 
+        // Both Kaltara and Luar Negeri doesn't have any location in the TOPOjson file (needs a better way to handle this)
         if (i < lengthOfData - 2) {
           jsonFeatures = topojson.feature(id, id.objects.states_provinces).features;
 
           for (let j = 0; i < jsonFeatures.length; j++) {
 
             let provinceNameJSON;
+
             if (jsonFeatures[j]["properties"]["name"] == null) {
                 continue;
             } else {
@@ -221,9 +282,11 @@ export const mapping = function(id, filename) {
 
               jsonFeatures[j]["properties"]["invalid"] = invalid;
 
+              jsonFeatures[j]["properties"]["totalVotes"] = totalVotes;
+
               // LEGISLATIVE VOTES
 
-              parties.forEach(function(party) {
+              parties.forEach(party => {
                 jsonFeatures[j]["properties"][party] = legislative[party];
               });
 
@@ -235,27 +298,38 @@ export const mapping = function(id, filename) {
         }
       }
 
-      let legVoteMax = Object.keys(legislativeTotal).reduce(function(m, k){ return legislativeTotal[k] > m ? legislativeTotal[k] : m }, -Infinity); 
-      let legVoteMin = Object.keys(legislativeTotal).reduce(function(m, k){ return legislativeTotal[k] < m ? legislativeTotal[k] : m }, Infinity); 
+      // Create a power scale for the size of the icons
+      let legVoteMax = Object.keys(legislativeTotal).reduce((m, k) => { return legislativeTotal[k] > m ? legislativeTotal[k] : m }, -Infinity); 
+      let legVoteMin = Object.keys(legislativeTotal).reduce((m, k) => { return legislativeTotal[k] < m ? legislativeTotal[k] : m }, Infinity); 
 
-      let legVoteLogScale = d3.scalePow()
+      let legVotePowScale = d3.scalePow()
                               .domain([legVoteMin, legVoteMax])
                               .range([40, 80]);
 
       let legislativeTotalSum = Object.values(legislativeTotal).reduce((a, b) => a + b);
 
-      parties.forEach(function(party) {
+
+      // GENERATE THIS (PKB is used as an example)
+      // <div class="partai-container">
+      //   <img id="PKB-icon" class="partai-icon" src="src/assets/img/partai/PKB.png" style="width: 53.5097px;">
+      //   <div class="vote-description">
+      //     <h3>PKB</h3>
+      //     <h1 id="PKB-vote">4,688</h1>
+      //     <h3 id="PKB-vote-percentage">8.68%</h3>
+      //   </div>
+      // </div>
+      parties.forEach(party => {
         let partyContainer = d3.select("#legislative")
                               .append("div")
                               .attr("class", "partai-container")
         
-        let partyContainerImage = partyContainer.append("img")
-                                      .attr("id", `${party}-icon`)
-                                      .attr("class", "partai-icon")
-                                      .attr("src", `src/assets/img/partai/${party}.png`)
-                                      .style("width", () => {
-                                        return legVoteLogScale(legislativeTotal[party]) + "px";
-                                      })
+        partyContainer.append("img")
+          .attr("id", `${party}-icon`)
+          .attr("class", "partai-icon")
+          .attr("src", `src/assets/img/partai/${party}.png`)
+          .style("width", () => {
+            return legVotePowScale(legislativeTotal[party]) + "px";
+          })
         
         let partyVoteDescription = partyContainer.append("div")
                                     .attr("class", "vote-description")
@@ -333,6 +407,7 @@ export const mapping = function(id, filename) {
         return commaSeparate(errorTPSTotal);
       })
 
+
       svg.selectAll(".province")
           .data(jsonFeatures)
           .enter()
@@ -344,8 +419,11 @@ export const mapping = function(id, filename) {
           })
           .style("fill", d => {
             if (d["properties"]["candidateOne"] > d["properties"]["candidateTwo"]) {
+              jokomarufWins += 1;
+
               return candidateOneColor(d["properties"]["candidateOne"]/ (d["properties"]["candidateOne"] + d["properties"]["candidateTwo"]));
-            } else {
+            } else if (d["properties"]["candidateOne"] < d["properties"]["candidateTwo"]) {
+              prabowosandiWins += 1;
               return candidateTwoColor(d["properties"]["candidateTwo"]/ (d["properties"]["candidateOne"] + d["properties"]["candidateTwo"]))
             }
           })
@@ -373,64 +451,17 @@ export const mapping = function(id, filename) {
               tooltip.style("top", (d3.event.clientY - 90) + 'px').style("left", (d3.event.clientX - 80) + 'px');    
           })
 
-          // REGENCIES AND CITIES VISUALIZATION ON CLICK
+        // Winning in ..... provinces
+        d3.select("#jokomaruf-wins")
+          .text(jokomarufWins)
+        
+        d3.select("#prabowosandi-wins")
+          .text(prabowosandiWins)
+          
 
-          // .on("click", d => {
-
-          //   let provinceID = d["properties"]["provinceID"];
-          //   let url = `https://kawal-c1.appspot.com/api/c/${provinceID}?${date}`;
-          //   let jsonFile = `src/assets/json/provinces/${provinceID}.json`
-
-          //   d3.select("#window-panel")
-          //     .style("display", "flex");
-                          
-
-          //   d3.json(jsonFile, function(error, id) {
-
-          //     if (error) {
-          //       return console.log(error);
-          //     }
-
-          //     console.log(id);
-
-          //     let jsonFeaturesPanel = topojson.feature(id, id.objects.IDN_adm_2_kabkota).features;
-
-          //     let svgPanel = d3.select("#window-panel")
-          //       .append("svg")
-          //       .attr("id", "city")
-          //       .attr("width", 400)
-          //       .attr("height", 400)
-          //       .append("g")
-          //       .attr("tranform", "translate(0" + margin.left + "," + margin.top + ")");
-              
-
-          //     let projectionPanel = d3.geoMercator()
-          //           .translate([-7400, 470])
-          //           .scale([4500]);
-
-          //     //Define default path generator
-          //     let pathPanel = d3.geoPath()
-          //                 .projection(projectionPanel);
-
-
-          //     svgPanel.selectAll(".city")
-          //       .data(jsonFeaturesPanel)
-          //       .enter()
-          //       .append("path")
-          //       .attr("d", pathPanel)
-          //       .attr("class", "city")
-          //       .style("z-index", 99)
-          //       .attr("fill", "white")
-          //       .style('stroke', 'black')
-          //       .style("opacity", 1)
-
-          //   })
-              
-          // })
-
-
+        // THE CODE THAT CONTROLS THE "LEGISLATIF" BUTTON STARTS HERE
         d3.select("#legislative-election")
-          .on("click", function(){
+          .on("click", () => {
 
             d3.select("#legislative-election")
               .style("background-color", "#B3A395");
@@ -439,6 +470,9 @@ export const mapping = function(id, filename) {
               .style("background-color", "#DAC6B5");
     
             d3.select("#president")
+              .style("display", "none");
+
+            d3.select("#color-by")
               .style("display", "none");
     
             d3.select("#legislative")
@@ -487,18 +521,7 @@ export const mapping = function(id, filename) {
 
             svg.selectAll(".province")
               .style("cursor", "pointer")
-              .on("mouseover", d => {
-                tooltip.style("visibility", "hidden");
-              })
               .on("click", d=> {
-
-                parties.forEach(function(party) {
-                  d3.select(`#${party}-vote`)
-                    .transition(1000)
-                    .text(() => {
-                      return commaSeparate(d["properties"][party]);
-                    })
-                });
 
                 legVoteMax = d["properties"][parties[0]];
                 legVoteMin = d["properties"][parties[0]];
@@ -506,7 +529,10 @@ export const mapping = function(id, filename) {
                 legislativeTotalSum = d["properties"][parties[0]];
                 
                 for (let i = 1; i < parties.length; i++) {
-                  legislativeTotalSum += d["properties"][parties[i]];
+                  if (d["properties"][parties[i]] != undefined) {
+                    legislativeTotalSum += d["properties"][parties[i]];
+                  }
+
                   if (d["properties"][parties[i]] > legVoteMax) {
                     legVoteMax = d["properties"][parties[i]];
                   } else if (d["properties"][parties[i]] < legVoteMin) {
@@ -514,31 +540,58 @@ export const mapping = function(id, filename) {
                   }
                 }
 
-                legVoteLogScale = d3.scalePow()
+
+                legVotePowScale = d3.scalePow()
                                     .domain([legVoteMin, legVoteMax])
                                     .range([40, 80]);
 
-                parties.forEach(function(party) {
+                parties.forEach(party => {
+                  d3.select(`#${party}-vote`)
+                    .transition(1000)
+                    .text(() => {
+                    
+                      if (d["properties"][party] != undefined) {
+                        return commaSeparate(d["properties"][party]);
+                      } else {
+                        return 0;
+                      }
+                    })
+
                   d3.select(`#${party}-icon`)
                     .transition(2000)
                     .style("width", () => {
-                      return legVoteLogScale(d["properties"][party]) + "px";
+                      return legVotePowScale(d["properties"][party]) + "px";
                     })
-                });
 
-                parties.forEach(function(party) {
                   d3.select(`#${party}-vote-percentage`)
                     .text(() => {
-                      return `${(d["properties"][party]/legislativeTotalSum * 100).toFixed(2)}%`;
+                      if (d["properties"][party] != undefined) {
+                        return `${(d["properties"][party]/legislativeTotalSum * 100).toFixed(2)}%`;
+                      } else {
+                        return 0;
+                      }
                     })
                 });
 
               })
+              .on("mouseover", d => {
+                tooltip.html(`
+                  <div class="tooltip">
+                    <p style="text-align: center; font-weight: bold; font-size: 14px;">${d["properties"]["name"].toUpperCase()}</p>
+                  </div>
+                `);
+
+                tooltip.style("visibility", "visible");
+              })
+              .on("mousemove", () => {
+                tooltip.style("top", (d3.event.clientY - 60) + 'px').style("left", (d3.event.clientX - 80) + 'px');    
+              });
         
           })
-    
+
+        // THE CODE THAT CONTROLS THE "PRESIDEN" BUTTON STARTS HERE
         d3.select("#presidential-election")
-          .on("click", function(){
+          .on("click", () => {
 
             d3.select("#legislative-election")
               .style("background-color", "#DAC6B5");
@@ -548,9 +601,13 @@ export const mapping = function(id, filename) {
     
             d3.select("#president")
               .style("display", "block");
+            
+            d3.select("#color-by")
+              .style("display", "block");
     
             d3.select("#legislative")
               .style("display", "none");
+
 
             svg.selectAll(".province")
               .transition()
@@ -580,8 +637,77 @@ export const mapping = function(id, filename) {
       
                 tooltip.style("visibility", "visible");
               })
+              .on("mousemove", () => {
+                tooltip.style("top", (d3.event.clientY - 90) + 'px').style("left", (d3.event.clientX - 80) + 'px');    
+              })
             
           })
+        
+
+        let TPSColorScale = d3.scalePow()
+                              .domain([minTPS,maxTPS])
+                              .interpolate(d3.interpolateCubehelix)
+                              .range([d3.rgb("#CDCFCE"), d3.rgb('#787C7A')]);
+        
+        d3.select("#jumlah-TPS")
+          .on("click", () => {
+            svg.selectAll(".province")
+              .transition()
+              .style("fill", d => {
+                return TPSColorScale(d["properties"]["provinceTPSNo"]);
+              })
+            
+            svg.selectAll(".province")
+            .on("mouseover", d => {
+    
+              tooltip.html(`
+                <div class="tooltip">
+                  <p style="text-align: center; font-weight: bold; font-size: 14px;">${d["properties"]["name"].toUpperCase()}</p>
+                  <p style="text-align: center; font-size: 14px; padding: 5px;">${commaSeparate(d["properties"]["provinceTPSNo"])}</p>
+                </div>
+              `)
+    
+              tooltip.style("visibility", "visible");
+            })
+              
+          })
+
+          // Loop over the array to apply the same configs
+          colorByButtons.forEach(button => {
+            let colorScale = d3.scaleLinear()
+                          .domain([button["domainMin"], button["domainMax"]])
+                          .interpolate(d3.interpolateCubehelix)
+                          .range([d3.rgb(button["rangeMin"]), d3.rgb(button["rangeMax"])]);
+
+            d3.select(`#${button["id"]}`)
+              .on("click", () => {
+                svg.selectAll(".province")
+                  .transition(1000)
+                  .style("fill", d => {
+                    return colorScale(d["properties"][button["numerator"]]/d["properties"][button["denominator"]] * 100);
+                  })
+
+                svg.selectAll(".province")
+                  .on("mouseover", d => {
+          
+                    tooltip.html(`
+                      <div class="tooltip">
+                        <p style="text-align: center; font-weight: bold; font-size: 14px;">${d["properties"]["name"].toUpperCase()}</p>
+                        <p style="text-align: center; font-size: 20px; padding: 5px;">${(d["properties"][button["numerator"]]/d["properties"][button["denominator"]] * 100).toFixed(2)}%</p>
+                        <p style="text-align: center;">${commaSeparate(d["properties"][button["numerator"]])}</p>
+                      </div>
+                    `)
+                    tooltip.style("visibility", "visible");
+                  })
+                  .on("mousemove", () => {
+                    tooltip.style("top", (d3.event.clientY - 110) + 'px').style("left", (d3.event.clientX - 80) + 'px');    
+                  });
+      
+
+              })
+          })      
+        
+        
     })
   })
 
