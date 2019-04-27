@@ -31,7 +31,7 @@ export const mapping = (id, filename) => {
               .attr("width", w)
               .attr("height", h)
               .append("g")
-              .attr("tranform", "translate(0" + margin.left + "," + margin.top + ")");
+              .attr("tranform", `translate(${margin.left}, ${margin.top})`);
 
 
   // Make the number easier to read
@@ -40,7 +40,7 @@ export const mapping = (id, filename) => {
   }
 
   let date = Date.now();
-  let APIurl = "https://kawal-c1.appspot.com/api/c/0?" + date;
+  let APIurl = `https://kawal-c1.appspot.com/api/c/0?${date}`;
 
   let lengthOfData;
   let jsonFeatures;
@@ -118,7 +118,7 @@ export const mapping = (id, filename) => {
   d3.select("#last-update")
     .text(() => {
       let lastUpdateTime = new Date();
-      let time = lastUpdateTime.toLocaleDateString('id-ID', options) + " " + lastUpdateTime.toLocaleTimeString();
+      let time = `${lastUpdateTime.toLocaleDateString('id-ID', options)} ${lastUpdateTime.toLocaleTimeString()}`;
       return time;
     })
 
@@ -126,7 +126,7 @@ export const mapping = (id, filename) => {
     
     lengthOfData = data["children"].length;
 
-    d3.json("src/assets/json/indonesia.json", (error, id) => {
+    d3.json(filename, (error, id) => {
 
       if (error) {
         return console.log(error);
@@ -228,7 +228,7 @@ export const mapping = (id, filename) => {
 
         parties.forEach(party => {
           
-          // PKS key on the API is 'sej' that's why
+          // PKS key in the API is 'sej' that's why
           if (party == "PKS") {
             legislative[party] = data["data"][provinceID]["sum"]["sej"];  
           } else {
@@ -242,13 +242,13 @@ export const mapping = (id, filename) => {
 
         let legMax = Object.keys(legislative).reduce((a, b) => legislative[a] > legislative[b] ? a : b);
         
-        // Without this the map color will look like the color of the last party on the list
+        // Without this the map color will look like the color of the last party in the list
         if (legislative[legMax] == undefined) {
           legMax = "NONE";
         }
 
 
-        // Both Kaltara and Luar Negeri doesn't have any location in the TOPOjson file (needs a better way to handle this)
+        // Both Kaltara and Luar Negeri don't have any location in the TOPOjson file (needs a better way to handle this)
         if (i < lengthOfData - 2) {
           jsonFeatures = topojson.feature(id, id.objects.states_provinces).features;
 
@@ -363,12 +363,12 @@ export const mapping = (id, filename) => {
 
       d3.select("#valid-votes-percentage")
         .text(() => {
-          return (validTotal / (validTotal + invalidTotal) * 100).toFixed(2) + "%";
+          return `${(validTotal / (validTotal + invalidTotal) * 100).toFixed(2)}%`;
         })
       
       d3.select("#invalid-votes-percentage")
         .text(() => {
-          return (invalidTotal / (validTotal + invalidTotal) * 100).toFixed(2) + "%";
+          return `${(invalidTotal / (validTotal + invalidTotal) * 100).toFixed(2)}%`;
         })
       
       d3.select("#invalid-votes")
@@ -384,17 +384,17 @@ export const mapping = (id, filename) => {
 
       d3.select("#jokomaruf-vote-percentage")
         .text(() => {
-          return (candidateOneTotal / (candidateOneTotal + candidateTwoTotal) * 100).toFixed(2) + "%"
+          return `${(candidateOneTotal / (candidateOneTotal + candidateTwoTotal) * 100).toFixed(2)}%`;
         })
       
       d3.select("#prabowosandi-vote-percentage")
         .text(() => {
-          return (candidateTwoTotal / (candidateOneTotal + candidateTwoTotal) * 100).toFixed(2) + "%"
+          return `${(candidateTwoTotal / (candidateOneTotal + candidateTwoTotal) * 100).toFixed(2)}%`;
         })
 
       d3.select("#received-TPS")
         .text(() => {
-          return commaSeparate(receivedTPSTotal) + " (" + (receivedTPSTotal/TPSTotal * 100).toFixed(2) +  "%)";
+          return `${commaSeparate(receivedTPSTotal)} (${(receivedTPSTotal/TPSTotal * 100).toFixed(2)}%)`;
         })
 
       d3.select("#unprocessed-TPS")
@@ -436,9 +436,9 @@ export const mapping = (id, filename) => {
 
             tooltip.html(`
               <div class="tooltip">
-                <p style="text-align: center; font-weight: bold; font-size: 14px;">${d["properties"]["name"].toUpperCase()}</p>
-                <p style="padding: 0 2px;"><span style="float: left; color: #AC0B13;">${commaSeparate(d["properties"]["candidateOne"])}</span> <span style="float: right; color: #79ADDC;">${commaSeparate(d["properties"]["candidateTwo"])}</span></p><br/>
-                <p><span style="float: left; color: #AC0B13;">${tempCandidateOnePercentage}%</span> <span style="float: right; color: #79ADDC;">${tempCandidateTwoPercentage}%</span></p><br/>
+                <p style="text-align: center; font-weight: bold; font-size: 14px; padding: 0 0 3px 0;">${d["properties"]["name"].toUpperCase()}</p>
+                <p><span style="font-size: 18px; font-weight: bold; float: left; color: #AC0B13;">${tempCandidateOnePercentage}%</span> <span style="font-size: 18px; font-weight: bold; float: right; color: #597EA1;">${tempCandidateTwoPercentage}%</span></p><br/>
+                <p style="padding: 0 2px 3px 2px;"><span style="float: left; color: #AC0B13;">${commaSeparate(d["properties"]["candidateOne"])}</span> <span style="float: right; color: #597EA1;">${commaSeparate(d["properties"]["candidateTwo"])}</span></p><br/>
               </div>
             `)
 
@@ -448,7 +448,8 @@ export const mapping = (id, filename) => {
               tooltip.style("visibility", "hidden");
           })
           .on("mousemove", () => {
-              tooltip.style("top", (d3.event.clientY - 90) + 'px').style("left", (d3.event.clientX - 80) + 'px');    
+              tooltip.style("top", `${d3.event.clientY - 90}px`)
+                      .style("left", `${d3.event.clientX - 80}px`);    
           })
 
         // Winning in ..... provinces
@@ -584,7 +585,8 @@ export const mapping = (id, filename) => {
                 tooltip.style("visibility", "visible");
               })
               .on("mousemove", () => {
-                tooltip.style("top", (d3.event.clientY - 60) + 'px').style("left", (d3.event.clientX - 80) + 'px');    
+                tooltip.style("top", `${d3.event.clientY - 60}px`)
+                        .style("left", `${d3.event.clientX - 80}px`);    
               });
         
           })
@@ -629,16 +631,17 @@ export const mapping = (id, filename) => {
       
                 tooltip.html(`
                   <div class="tooltip">
-                    <p style="text-align: center; font-weight: bold; font-size: 14px;">${d["properties"]["name"].toUpperCase()}</p>
-                    <p style="padding: 0 2px;"><span style="float: left; color: #AC0B13;">${commaSeparate(d["properties"]["candidateOne"])}</span> <span style="float: right; color: #79ADDC;">${commaSeparate(d["properties"]["candidateTwo"])}</span></p><br/>
-                    <p><span style="float: left; color: #AC0B13;">${tempCandidateOnePercentage}%</span> <span style="float: right; color: #79ADDC;">${tempCandidateTwoPercentage}%</span></p><br/>
+                    <p style="text-align: center; font-weight: bold; font-size: 14px; padding: 0 0 3px 0;">${d["properties"]["name"].toUpperCase()}</p>
+                    <p><span style="font-size: 18px; font-weight: bold; float: left; color: #AC0B13;">${tempCandidateOnePercentage}%</span> <span style="font-size: 18px; font-weight: bold; float: right; color: #597EA1;">${tempCandidateTwoPercentage}%</span></p><br/>
+                    <p style="padding: 0 2px 3px 2px;"><span style="float: left; color: #AC0B13;">${commaSeparate(d["properties"]["candidateOne"])}</span> <span style="float: right; color: #597EA1;">${commaSeparate(d["properties"]["candidateTwo"])}</span></p><br/>
                   </div>
                 `)
       
                 tooltip.style("visibility", "visible");
               })
               .on("mousemove", () => {
-                tooltip.style("top", (d3.event.clientY - 90) + 'px').style("left", (d3.event.clientX - 80) + 'px');    
+                tooltip.style("top", `${d3.event.clientY - 90}px`)
+                        .style("left", `${d3.event.clientX - 80}px`);    
               })
             
           })
@@ -700,7 +703,8 @@ export const mapping = (id, filename) => {
                     tooltip.style("visibility", "visible");
                   })
                   .on("mousemove", () => {
-                    tooltip.style("top", (d3.event.clientY - 110) + 'px').style("left", (d3.event.clientX - 80) + 'px');    
+                    tooltip.style("top", `${d3.event.clientY - 110}px`)
+                            .style("left", `${d3.event.clientX - 80}px`);    
                   });
       
 
