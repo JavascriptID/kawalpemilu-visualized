@@ -1,4 +1,4 @@
-export const mapping = (id, filename) => {
+export const indonesiaChoropleth = (id, filename) => {
   let w = 1200,
       h = 400;
 
@@ -208,23 +208,11 @@ export const mapping = (id, filename) => {
           colorByButtons[2]["domainMin"] = invalidPercentage;
         }
 
-        // Handle KALTARA problem for now
-        if (provinceName == "KALIMANTAN UTARA") {
-          if (candidateOne > candidateTwo) {
-            jokomarufWins += 1;
-          } else {
-            prabowosandiWins += 1;
-          }
-        }
-
         // LEGISLATIVE DATA STARTS HERE
 
         let legislative = {
 
         }
-        // parties.forEach(party => {
-        //   legislative[party] = 0;
-        // })
 
         parties.forEach(party => {
           
@@ -249,8 +237,8 @@ export const mapping = (id, filename) => {
 
 
         // Both Kaltara and Luar Negeri don't have any location in the TOPOjson file (needs a better way to handle this)
-        if (i < lengthOfData - 2) {
-          jsonFeatures = topojson.feature(id, id.objects.states_provinces).features;
+        if (i < lengthOfData - 1) {
+          jsonFeatures = topojson.feature(id, id.objects.regions).features;
 
           for (let j = 0; i < jsonFeatures.length; j++) {
 
@@ -309,15 +297,19 @@ export const mapping = (id, filename) => {
       let legislativeTotalSum = Object.values(legislativeTotal).reduce((a, b) => a + b);
 
 
-      // GENERATE THIS (PKB is used as an example)
-      // <div class="partai-container">
-      //   <img id="PKB-icon" class="partai-icon" src="src/assets/img/partai/PKB.png" style="width: 53.5097px;">
-      //   <div class="vote-description">
-      //     <h3>PKB</h3>
-      //     <h1 id="PKB-vote">4,688</h1>
-      //     <h3 id="PKB-vote-percentage">8.68%</h3>
-      //   </div>
-      // </div>
+      /* GENERATE THIS (PKB is used as an example) */
+
+      /*
+      <div class="partai-container">
+         <img id="PKB-icon" class="partai-icon" src="src/assets/img/partai/PKB.png" style="width: 53.5097px;">
+         <div class="vote-description">
+           <h3>PKB</h3>
+           <h1 id="PKB-vote">4,688</h1>
+           <h3 id="PKB-vote-percentage">8.68%</h3>
+         </div>
+      </div>
+      */
+     
       parties.forEach(party => {
         let partyContainer = d3.select("#legislative")
                               .append("div")
@@ -350,30 +342,35 @@ export const mapping = (id, filename) => {
           })
 
       });            
-  
+      
+      // Controls the total votes
       d3.select("#total-votes")
         .text(() => {
           return commaSeparate(validTotal + invalidTotal);
         })
-
+      
+      // Controls the number of valid votes
       d3.select("#valid-votes")
         .text(() => {
           return commaSeparate(validTotal);
         })
 
+      // Controls the number of invalid votes
+      d3.select("#invalid-votes")
+        .text(() => {
+          return commaSeparate(invalidTotal);
+        })
+
+      // Controls the number of valid votes percentage
       d3.select("#valid-votes-percentage")
         .text(() => {
           return `${(validTotal / (validTotal + invalidTotal) * 100).toFixed(2)}%`;
         })
-      
+
+      // Controls the number of invalid votes percentage
       d3.select("#invalid-votes-percentage")
         .text(() => {
           return `${(invalidTotal / (validTotal + invalidTotal) * 100).toFixed(2)}%`;
-        })
-      
-      d3.select("#invalid-votes")
-        .text(() => {
-          return commaSeparate(invalidTotal);
         })
 
       d3.select("#jokomaruf-vote")
@@ -415,9 +412,12 @@ export const mapping = (id, filename) => {
           .attr("d", path)
           .attr("class", "province")
           .attr("id", d => {
+            // Create specific ID for each paths, so it will be easier for the on mouseover event
             return d["properties"]["postal"];
           })
           .style("fill", d => {
+
+            // Check if the total votes for candidate one is greater than candidate two for each province
             if (d["properties"]["candidateOne"] > d["properties"]["candidateTwo"]) {
               jokomarufWins += 1;
 
@@ -434,6 +434,7 @@ export const mapping = (id, filename) => {
             let tempCandidateOnePercentage = ((d["properties"]["candidateOne"] / tempTotal) * 100).toFixed(2)
             let tempCandidateTwoPercentage = ((d["properties"]["candidateTwo"] / tempTotal) * 100).toFixed(2)
 
+            // Tooltip will appear on mouseover
             tooltip.html(`
               <div class="tooltip">
                 <p style="text-align: center; font-weight: bold; font-size: 14px; padding: 0 0 3px 0;">${d["properties"]["name"].toUpperCase()}</p>
@@ -454,10 +455,10 @@ export const mapping = (id, filename) => {
 
         // Winning in ..... provinces
         d3.select("#jokomaruf-wins")
-          .text(jokomarufWins)
+          .text(`${jokomarufWins} Provinsi`);
         
         d3.select("#prabowosandi-wins")
-          .text(prabowosandiWins)
+          .text(`${prabowosandiWins} Provinsi`);
           
 
         // THE CODE THAT CONTROLS THE "LEGISLATIF" BUTTON STARTS HERE
@@ -469,10 +470,19 @@ export const mapping = (id, filename) => {
 
             d3.select("#presidential-election")
               .style("background-color", "#DAC6B5");
+
+            d3.select("#foreign-election")
+              .style("background-color", "#DAC6B5");
     
             d3.select("#president")
               .style("display", "none");
 
+            d3.select("#world-choropleth")
+              .style("display", "none");
+            
+            d3.select("#indonesia-choropleth")
+              .style("display", "block");
+              
             d3.select("#color-by")
               .style("display", "none");
     
@@ -483,6 +493,8 @@ export const mapping = (id, filename) => {
               .transition()
               .duration(1000)
               .style("fill", d => {
+
+                // Color each province depending on the winning party
                 if (d["properties"]["legMax"] == "PKB") {
                   return "#358469";
                 } else if (d["properties"]["legMax"] == "GER") {
@@ -523,6 +535,7 @@ export const mapping = (id, filename) => {
             svg.selectAll(".province")
               .style("cursor", "pointer")
               .on("click", d=> {
+
 
                 legVoteMax = d["properties"][parties[0]];
                 legVoteMin = d["properties"][parties[0]];
@@ -595,13 +608,29 @@ export const mapping = (id, filename) => {
         d3.select("#presidential-election")
           .on("click", () => {
 
+            // Winning in ..... provinces
+            d3.select("#jokomaruf-wins")
+            .text(`${jokomarufWins} Provinsi`);
+          
+            d3.select("#prabowosandi-wins")
+            .text(`${prabowosandiWins} Provinsi`);
+
             d3.select("#legislative-election")
               .style("background-color", "#DAC6B5");
 
             d3.select("#presidential-election")
               .style("background-color", "#B3A395");
+
+              d3.select("#foreign-election")
+              .style("background-color", "#DAC6B5");
     
             d3.select("#president")
+              .style("display", "block");
+
+            d3.select("#world-choropleth")
+              .style("display", "none");
+
+            d3.select("#indonesia-choropleth")
               .style("display", "block");
             
             d3.select("#color-by")
