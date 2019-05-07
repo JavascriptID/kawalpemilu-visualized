@@ -215,7 +215,7 @@ export const indonesiaChoropleth = (id, filename) => {
         }
 
         parties.forEach(party => {
-          
+
           // PKS key in the API is 'sej' that's why
           if (party == "PKS") {
             legislative[party] = data["data"][provinceID]["sum"]["sej"];  
@@ -225,18 +225,22 @@ export const indonesiaChoropleth = (id, filename) => {
 
           if (legislative[party] != undefined) {
             legislativeTotal[party] += legislative[party];  
+          } else {
+            legislative[party] = 0;
           }
+
+          
         })
 
         let legMax = Object.keys(legislative).reduce((a, b) => legislative[a] > legislative[b] ? a : b);
         
         // Without this the map color will look like the color of the last party in the list
-        if (legislative[legMax] == undefined) {
+        if (legislative[legMax] == 0) {
           legMax = "NONE";
         }
 
 
-        // Both Kaltara and Luar Negeri don't have any location in the TOPOjson file (needs a better way to handle this)
+        // Luar Negeri doesn't have any location in the TOPOjson file (needs a better way to handle this)
         if (i < lengthOfData - 1) {
           jsonFeatures = topojson.feature(id, id.objects.regions).features;
 
@@ -439,7 +443,7 @@ export const indonesiaChoropleth = (id, filename) => {
               <div class="tooltip">
                 <p style="text-align: center; font-weight: bold; font-size: 14px; padding: 0 0 3px 0;">${d["properties"]["name"].toUpperCase()}</p>
                 <p><span style="font-size: 18px; font-weight: bold; float: left; color: #AC0B13;">${tempCandidateOnePercentage}%</span> <span style="font-size: 18px; font-weight: bold; float: right; color: #597EA1;">${tempCandidateTwoPercentage}%</span></p><br/>
-                <p style="padding: 0 2px 3px 2px;"><span style="float: left; color: #AC0B13;">${commaSeparate(d["properties"]["candidateOne"])}</span> <span style="float: right; color: #597EA1;">${commaSeparate(d["properties"]["candidateTwo"])}</span></p><br/>
+                <p style=" clear: both; padding: 0 2px 3px 2px;"><span style="float: left; color: #AC0B13;">${commaSeparate(d["properties"]["candidateOne"])}</span> <span style="float: right; color: #597EA1;">${commaSeparate(d["properties"]["candidateTwo"])}</span></p><br/>
               </div>
             `)
 
@@ -449,7 +453,7 @@ export const indonesiaChoropleth = (id, filename) => {
               tooltip.style("visibility", "hidden");
           })
           .on("mousemove", () => {
-              tooltip.style("top", `${d3.event.clientY - 90}px`)
+              tooltip.style("top", `${d3.event.clientY - 100}px`)
                       .style("left", `${d3.event.clientX - 80}px`);    
           })
 
@@ -462,17 +466,20 @@ export const indonesiaChoropleth = (id, filename) => {
           
 
         // THE CODE THAT CONTROLS THE "LEGISLATIF" BUTTON STARTS HERE
-        d3.select("#legislative-election")
+        d3.select("#legislative-election-dom")
           .on("click", () => {
 
-            d3.select("#legislative-election")
-              .style("background-color", "#B3A395");
+            d3.select("#legislative-election-dom")
+              .style("background-color", "#AEAE8C");
 
-            d3.select("#presidential-election")
-              .style("background-color", "#DAC6B5");
+            d3.select("#legislative-election-overseas")
+              .style("background-color", "#D4D4AA");
 
-            d3.select("#foreign-election")
-              .style("background-color", "#DAC6B5");
+            d3.select("#presidential-election-dom")
+              .style("background-color", "#BAD4AA");
+
+            d3.select("#presidential-election-overseas")
+              .style("background-color", "#BAD4AA");
     
             d3.select("#president")
               .style("display", "none");
@@ -603,7 +610,7 @@ export const indonesiaChoropleth = (id, filename) => {
           })
 
         // THE CODE THAT CONTROLS THE "PRESIDEN" BUTTON STARTS HERE
-        d3.select("#presidential-election")
+        d3.select("#presidential-election-dom")
           .on("click", () => {
 
             // Winning in ..... provinces
@@ -613,14 +620,17 @@ export const indonesiaChoropleth = (id, filename) => {
             d3.select("#prabowosandi-wins")
             .text(`${prabowosandiWins} Provinsi`);
 
-            d3.select("#legislative-election")
-              .style("background-color", "#DAC6B5");
+            d3.select("#legislative-election-dom")
+              .style("background-color", "#D4D4AA");
 
-            d3.select("#presidential-election")
-              .style("background-color", "#B3A395");
+            d3.select("#legislative-election-overseas")
+              .style("background-color", "#D4D4AA");
 
-              d3.select("#foreign-election")
-              .style("background-color", "#DAC6B5");
+            d3.select("#presidential-election-dom")
+              .style("background-color", "#99AE8C");
+
+              d3.select("#presidential-election-overseas")
+              .style("background-color", "#BAD4AA");
     
             d3.select("#president")
               .style("display", "block");
@@ -650,6 +660,7 @@ export const indonesiaChoropleth = (id, filename) => {
               })
 
             svg.selectAll(".province")
+              .style("cursor", "default")
               .on("mouseover", d => {
 
                 let tempTotal = d["properties"]["candidateOne"] + d["properties"]["candidateTwo"]
@@ -667,7 +678,7 @@ export const indonesiaChoropleth = (id, filename) => {
                 tooltip.style("visibility", "visible");
               })
               .on("mousemove", () => {
-                tooltip.style("top", `${d3.event.clientY - 90}px`)
+                tooltip.style("top", `${d3.event.clientY - 100}px`)
                         .style("left", `${d3.event.clientX - 80}px`);    
               })
             
